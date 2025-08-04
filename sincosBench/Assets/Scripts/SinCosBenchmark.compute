@@ -1,0 +1,128 @@
+﻿#pragma enable_d3d11_debug_symbols
+#pragma use_dxc
+
+#pragma kernel Bench1
+#pragma kernel Bench2
+#pragma kernel Bench3
+
+// 実行ごとに上書きするパラメータ
+cbuffer Params
+{
+    uint iterations; // 1 スレッドが呼ぶ sin/cos の回数
+}
+
+RWStructuredBuffer<float> result; // 要素数 1 で OK
+
+//マンデルブロー集合の計算 function
+//float2を入力として、float2を出力する。cに相当部分は定数を使う
+inline float2 mandelbrot(float2 z)
+{
+    static const float2 c = float2(-0.7f, 0.27015f); // マンデルブロー集合の中心
+    //z = float2(z.x * z.x - z.y * z.y, 2.0f * z.x * z.y) + c;
+    z.x = z.x * z.x - (z.y * z.y - c.x);
+    z.y = 2.0f * z.x * z.y + c.y;
+    return z;
+}
+
+[numthreads(1024, 1, 1)]
+void Bench1(uint3 id : SV_DispatchThreadID)
+{
+    float x = 0.000123f * (id.x + 1); // スタート値をスレッド毎に変化
+    float acc = 0.0f;
+    float2 z;
+    z = float2(0.0001f * (id.x / 64), x); // マンデルブロー集合の計算用変数
+    
+    for (uint i = 0; i < iterations; ++i)
+    {
+        /*
+        x = sin(x);
+        z = mandelbrot(z);
+        x = sin(x);
+        z = mandelbrot(z);
+        x = sin(x);
+        z = mandelbrot(z);
+        x = sin(x);
+        z = mandelbrot(z);
+        x = sin(x);
+        z = mandelbrot(z);
+        x = sin(x);
+        z = mandelbrot(z);
+        x = sin(x);
+        z = mandelbrot(z);
+        x = sin(x);
+        z = mandelbrot(z);
+        */
+        
+        x = sin(x);
+        x = sin(x);
+        x = sin(x);
+        x = sin(x);
+        z = mandelbrot(z);
+        z = mandelbrot(z);
+        z = mandelbrot(z);
+        z = mandelbrot(z);
+        x = sin(x);
+        x = sin(x);
+        x = sin(x);
+        x = sin(x);
+        z = mandelbrot(z);
+        z = mandelbrot(z);
+        z = mandelbrot(z);
+        z = mandelbrot(z);
+    }
+
+    // 256 threads 内で 1 つだけ書き込む
+    if (id.x == 0)
+        result[0] = x+acc+z.x;
+}
+
+[numthreads(1024, 1, 1)]
+void Bench2(uint3 id : SV_DispatchThreadID)
+{
+    float x = 0.000123f * (id.x + 1); // スタート値をスレッド毎に変化
+    float acc = 0.0f;
+    float2 z;
+    z = float2(0.0001f * (id.x / 64), x); // マンデルブロー集合の計算用変数
+    
+    for (uint i = 0; i < iterations; ++i)
+    {
+        x = sin(x);
+        x = sin(x);
+        x = sin(x);
+        x = sin(x);
+        x = sin(x);
+        x = sin(x);
+        x = sin(x);
+        x = sin(x);
+    }
+
+    // 256 threads 内で 1 つだけ書き込む
+    if (id.x == 0)
+        result[0] = x + acc + z.x;
+}
+
+
+[numthreads(1024, 1, 1)]
+void Bench3(uint3 id : SV_DispatchThreadID)
+{
+    float x = 0.000123f * (id.x + 1); // スタート値をスレッド毎に変化
+    float acc = 0.0f;
+    float2 z;
+    z = float2(0.0001f * (id.x / 64), x); // マンデルブロー集合の計算用変数
+    
+    for (uint i = 0; i < iterations; ++i)
+    {
+        z = mandelbrot(z);
+        z = mandelbrot(z);
+        z = mandelbrot(z);
+        z = mandelbrot(z);
+        z = mandelbrot(z);
+        z = mandelbrot(z);
+        z = mandelbrot(z);
+        z = mandelbrot(z);
+    }
+
+    // 256 threads 内で 1 つだけ書き込む
+    if (id.x == 0)
+        result[0] = x + acc + z.x;
+}

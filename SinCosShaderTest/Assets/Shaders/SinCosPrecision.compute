@@ -1,0 +1,51 @@
+// SinCosPrecision.compute
+// このコンピュートシェーダーは、入力された角度（ラジアン）に対する sin と cos の値を計算します。
+
+#pragma kernel CSMain
+
+// 入力データ構造体
+// C#から渡されるランダムな角度（シータ）
+struct Input
+{
+    float theta;
+};
+
+// 出力データ構造体
+// GPUで計算されたsinとcosの結果
+struct Output
+{
+    float sin_value;
+    float cos_value;
+};
+
+// 入力と出力用の構造化バッファ
+StructuredBuffer<Input> _InputBuffer;
+RWStructuredBuffer<Output> _OutputBuffer;
+int _NumSamples;
+
+// コンピュートシェーダーのメイン関数
+// スレッドIDに基づいて、対応する入力角度のsin/cosを計算し、出力バッファに書き込みます。
+[numthreads(64, 1, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= _NumSamples)
+        return;
+    // 入力バッファから角度を取得
+    float theta = _InputBuffer[id.x].theta;
+
+    // HLSLの組み込み関数を使用してsinとcosを計算
+    // これが今回精度を調査する対象の命令です。
+    // 多くのGPUでは、これは高速化のために近似計算を行う命令にコンパイルされます。
+    // 例 NVIDIAのGPU:sin.approx.ftz.f32 / cos.approx.ftz.f32
+    // 例 AMDのGPU:V_SIN_F32 / V_COS_F32
+    
+    float sin_val = sin(theta);
+    float cos_val = cos(theta);
+    Output result;
+    result.sin_value = sin_val;
+    result.cos_value = cos_val;
+    
+    // 計算結果を出力バッファに格納
+    _OutputBuffer[id.x] = result;
+}
+
